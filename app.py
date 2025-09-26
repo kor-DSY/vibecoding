@@ -64,12 +64,19 @@ if '지역' in df_original.columns:
     unique_regions = sorted(df_original['지역'].unique())
     # '전국'을 필터 옵션에서 제외
     region_options = [r for r in unique_regions if r != '전국']
-    
-    selected_regions = st.sidebar.multiselect(
-        '지역 선택',
-        options=region_options,
-        default=region_options # 모든 지역을 기본으로 선택
-    )
+
+    # "전 지역" 체크박스 추가
+    select_all_regions = st.sidebar.checkbox('전 지역', value=True)
+
+    if select_all_regions:
+        selected_regions = region_options
+    else:
+        # 체크박스가 해제되면 사용자가 지역을 선택할 수 있도록 함
+        selected_regions = st.sidebar.multiselect(
+            '지역 선택',
+            options=region_options,
+            default=[] # 기본 선택 없음
+        )
 else:
     selected_regions = []
     st.sidebar.warning("'지역' 컬럼을 찾을 수 없습니다.")
@@ -91,6 +98,16 @@ if selected_regions:
 if selected_year_option != '전체':
     df_filtered = df_filtered[df_filtered['년도'] == selected_year_option]
 
+# --- 데이터 표시 ---
+if '년도' in df_filtered.columns and '지역' in df_filtered.columns:
+    cols = df_filtered.columns.tolist()
+    if '년도' in cols: cols.remove('년도')
+    if '지역' in cols: cols.remove('지역')
+    new_order = ['년도', '지역'] + cols
+    df_filtered = df_filtered[new_order]
+
+st.write("#### 검색된 경제활동 데이터", df_filtered)
+
 # --- 전국 데이터 요약 표시 ---
 st.write("---")
 nationwide_df = df_original[df_original['지역'] == '전국']
@@ -109,16 +126,6 @@ if not nationwide_df.empty and all(c in nationwide_df.columns for c in ['년도'
         fig_unemp_summary.update_traces(textposition='outside')
         st.plotly_chart(fig_unemp_summary, use_container_width=True)
 st.write("---")
-
-# --- 데이터 표시 ---
-if '년도' in df_filtered.columns and '지역' in df_filtered.columns:
-    cols = df_filtered.columns.tolist()
-    if '년도' in cols: cols.remove('년도')
-    if '지역' in cols: cols.remove('지역')
-    new_order = ['년도', '지역'] + cols
-    df_filtered = df_filtered[new_order]
-
-st.write("#### 검색된 경제활동 데이터", df_filtered)
 
 # --- 차트 표시 ---
 st.write("---")
